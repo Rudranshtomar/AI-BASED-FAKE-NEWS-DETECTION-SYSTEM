@@ -1,7 +1,17 @@
-.env
+# Python
+__pycache__/
+*.pyc
 venv/
 .venv/
-__pycache__/
-.pytest_cache/
-*.pyc
-dataset/*.csv
+
+# Environment variables
+.env
+
+# IDE
+.vscode/
+
+# Temporary files
+*.log
+.DS_Store
+# Dataset files
+dataset/
