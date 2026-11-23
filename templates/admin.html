@@ -1,0 +1,442 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Console - TruthLens AI{% endblock %}
+
+{% block content %}
+<div class="admin-layout container">
+    <!-- Admin Sidebar -->
+    <aside class="admin-sidebar">
+        <div class="sidebar-header">
+            <span class="sidebar-badge">ADMIN CONSOLE</span>
+            <h3>TruthLens Core</h3>
+        </div>
+
+        <nav class="sidebar-nav">
+            <a href="#overview" class="sidebar-link active" data-section="overview">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect>
+                </svg>
+                Overview
+            </a>
+            <a href="#users" class="sidebar-link" data-section="users">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="9" cy="7" r="4"></circle>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                </svg>
+                User Management
+            </a>
+            <a href="#predictions" class="sidebar-link" data-section="predictions">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                </svg>
+                Prediction History
+            </a>
+            <a href="#performance" class="sidebar-link" data-section="performance">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polyline points="12 6 12 12 14 14"></polyline>
+                </svg>
+                Model Performance
+            </a>
+            <a href="#telemetry" class="sidebar-link" data-section="telemetry">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
+                    <line x1="4" y1="22" x2="4" y2="15"></line>
+                </svg>
+                System Telemetry
+            </a>
+            <div class="sidebar-divider"></div>
+            <a href="{{ url_for('logout') }}" class="sidebar-link sidebar-logout">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                    <polyline points="16 17 21 12 16 7"></polyline>
+                    <line x1="21" y1="12" x2="9" y2="12"></line>
+                </svg>
+                Logout
+            </a>
+        </nav>
+    </aside>
+
+    <!-- Admin Main Body -->
+    <main class="admin-main">
+        <!-- Top Status Bar -->
+        <div class="admin-topbar">
+            <div>
+                <h2>Enterprise Administration</h2>
+                <p class="text-muted">Server Role: <strong>{{ session.get('user_role') | upper }}</strong> &bull; Authenticated: {{ session.get('user_email') }}</p>
+            </div>
+            <div>
+                <a href="{{ url_for('export_history') }}" class="btn btn-secondary btn-sm" download>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                    Export Full Audit CSV
+                </a>
+            </div>
+        </div>
+
+        <!-- SECTION 1: OVERVIEW & KPIS -->
+        <section id="overview" class="admin-section active">
+            <div class="admin-kpi-grid">
+                <div class="kpi-card">
+                    <div class="kpi-icon blue">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle></svg>
+                    </div>
+                    <div class="kpi-info">
+                        <span class="kpi-label">Total Registered Users</span>
+                        <span class="kpi-value">{{ total_users }}</span>
+                    </div>
+                </div>
+
+                <div class="kpi-card">
+                    <div class="kpi-icon indigo">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+                    </div>
+                    <div class="kpi-info">
+                        <span class="kpi-label">Total Predictions</span>
+                        <span class="kpi-value">{{ total_predictions }}</span>
+                    </div>
+                </div>
+
+                <div class="kpi-card">
+                    <div class="kpi-icon red">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
+                    </div>
+                    <div class="kpi-info">
+                        <span class="kpi-label">Fake Predictions</span>
+                        <span class="kpi-value" id="adminFakeCount">{{ fake_count }}</span>
+                    </div>
+                </div>
+
+                <div class="kpi-card">
+                    <div class="kpi-icon green">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                    </div>
+                    <div class="kpi-info">
+                        <span class="kpi-label">Real Predictions</span>
+                        <span class="kpi-value" id="adminRealCount">{{ real_count }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="admin-charts-grid">
+                <!-- Doughnut Distribution Chart -->
+                <div class="dashboard-card">
+                    <div class="card-toolbar">
+                        <h3>Prediction Distribution</h3>
+                        <span class="text-muted">Real vs Fake Ratio</span>
+                    </div>
+                    <div class="chart-wrapper">
+                        <canvas id="adminNewsChart" style="max-height: 260px;"></canvas>
+                    </div>
+                </div>
+
+                <!-- Recent Activity Feed -->
+                <div class="dashboard-card">
+                    <div class="card-toolbar">
+                        <h3>Recent Platform Inferences</h3>
+                        <span class="text-muted">Live Stream</span>
+                    </div>
+                    <div class="activity-feed">
+                        {% if recent_activity %}
+                            {% for act in recent_activity %}
+                            <div class="activity-item">
+                                <span class="activity-dot {% if act.prediction == 'FAKE' %}dot-fake{% else %}dot-real{% endif %}"></span>
+                                <div class="activity-details">
+                                    <div class="activity-top">
+                                        <span class="badge {% if act.prediction == 'FAKE' %}badge-fake{% else %}badge-real{% endif %}">{{ act.prediction }}</span>
+                                        <span class="activity-conf">{{ act.confidence }}% conf</span>
+                                        <span class="activity-time">{{ act.created_at.strftime('%H:%M:%S') if act.created_at else '' }}</span>
+                                    </div>
+                                    <p class="activity-text">{{ act.news[:110] }}...</p>
+                                    <small class="activity-user">{{ act.user_email or 'Anonymous Guest' }}</small>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <p class="text-muted text-center" style="padding: 24px;">No recent inference activity.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 2: USER MANAGEMENT -->
+        <section id="users" class="admin-section" style="margin-top: 24px;">
+            <div class="dashboard-card">
+                <div class="card-toolbar">
+                    <div>
+                        <h3>User Account Management</h3>
+                        <span class="toolbar-sub">Manage registered platform accounts and role permissions</span>
+                    </div>
+                    <form method="GET" action="{{ url_for('admin_dashboard') }}#users" class="table-search-form">
+                        <div class="search-input-group">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                            <input type="text" name="user_q" placeholder="Search by name or email..." value="{{ user_query if user_query else '' }}">
+                        </div>
+                    </form>
+                </div>
+
+                {% if users_list %}
+                <div class="table-responsive">
+                    <table class="history-table">
+                        <thead>
+                            <tr>
+                                <th>User Profile</th>
+                                <th>Role</th>
+                                <th>Status</th>
+                                <th>Checks Made</th>
+                                <th>Registered</th>
+                                <th class="text-right">Admin Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for u in users_list %}
+                            <tr>
+                                <td>
+                                    <div class="user-inline-cell">
+                                        <span class="user-avatar-sm">{{ u.name[0] | upper }}</span>
+                                        <div>
+                                            <strong>{{ u.name }}</strong>
+                                            <div class="text-muted text-sm">{{ u.email }}</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="role-badge role-{{ u.role }}">{{ u.role | upper }}</span>
+                                </td>
+                                <td>
+                                    {% if u.is_active %}
+                                        <span class="status-indicator active">Active</span>
+                                    {% else %}
+                                        <span class="status-indicator suspended">Suspended</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <strong>{{ user_pred_counts.get(u.email, 0) }}</strong>
+                                </td>
+                                <td class="time-col">
+                                    {{ u.created_at.strftime('%d %b %Y') if u.created_at else 'N/A' }}
+                                </td>
+                                <td class="text-right action-col">
+                                    <!-- Toggle Role -->
+                                    <form action="{{ url_for('admin_toggle_user_role', user_id=u._id) }}" method="POST" style="display:inline;" onsubmit="return confirm('Toggle role for this user?');">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                        <button type="submit" class="btn btn-secondary btn-xs" title="Change between user and admin">
+                                            {{ 'Demote' if u.role == 'admin' else 'Promote to Admin' }}
+                                        </button>
+                                    </form>
+
+                                    <!-- Toggle Active / Suspended -->
+                                    <form action="{{ url_for('admin_toggle_user_status', user_id=u._id) }}" method="POST" style="display:inline;" onsubmit="return confirm('Toggle active/suspended status?');">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                        <button type="submit" class="btn btn-secondary btn-xs" title="Suspend or activate account">
+                                            {{ 'Suspend' if u.is_active else 'Activate' }}
+                                        </button>
+                                    </form>
+
+                                    <!-- Delete User -->
+                                    {% if u.email != session.get('user_email') %}
+                                    <form action="{{ url_for('admin_delete_user', user_id=u._id) }}" method="POST" style="display:inline;" onsubmit="return confirm('Permanently delete this user and their private history?');">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                        <button type="submit" class="btn-icon btn-icon-danger" title="Delete user">
+                                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                                        </button>
+                                    </form>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <p>No user accounts found matching query.</p>
+                </div>
+                {% endif %}
+            </div>
+        </section>
+
+        <!-- SECTION 3: AUDIT PREDICTION HISTORY -->
+        <section id="predictions" class="admin-section" style="margin-top: 24px;">
+            <div class="dashboard-card">
+                <div class="card-toolbar">
+                    <div>
+                        <h3>Global Prediction Audit Log</h3>
+                        <span class="toolbar-sub">All verifications executed across all users and guest sessions</span>
+                    </div>
+
+                    <div class="toolbar-right">
+                        <form method="GET" action="{{ url_for('admin_dashboard') }}#predictions" class="table-search-form">
+                            <div class="search-input-group">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                                <input type="text" name="pred_q" placeholder="Search headline or content..." value="{{ pred_query if pred_query else '' }}">
+                            </div>
+                            <select name="pred_filter" class="form-select" onchange="this.form.submit()">
+                                <option value="all" {% if pred_filter == 'all' %}selected{% endif %}>All Results</option>
+                                <option value="FAKE" {% if pred_filter == 'FAKE' %}selected{% endif %}>Fake Only</option>
+                                <option value="REAL" {% if pred_filter == 'REAL' %}selected{% endif %}>Real Only</option>
+                            </select>
+                        </form>
+
+                        <form action="{{ url_for('admin_clear_all_history') }}" method="POST" onsubmit="return confirm('DANGER: Wipe all stored predictions across the entire system?');">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                            <button type="submit" class="btn btn-danger-subtle btn-sm">Purge All Records</button>
+                        </form>
+                    </div>
+                </div>
+
+                {% if all_predictions %}
+                <div class="table-responsive">
+                    <table class="history-table">
+                        <thead>
+                            <tr>
+                                <th>Content / Source</th>
+                                <th>User Account</th>
+                                <th>Result</th>
+                                <th>Confidence</th>
+                                <th>Timestamp (UTC)</th>
+                                <th class="text-right">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for p in all_predictions %}
+                            <tr>
+                                <td class="news-column">
+                                    {% if p.title %}<strong class="history-item-title">{{ p.title }}</strong>{% endif %}
+                                    <p class="history-item-snippet">{{ p.news[:180] }}...</p>
+                                    {% if p.url %}<a href="{{ p.url }}" target="_blank" rel="noopener noreferrer" class="source-link">🔗 {{ p.url }}</a>{% endif %}
+                                </td>
+                                <td>
+                                    <span class="user-pill">{{ p.user_email or 'Anonymous Guest' }}</span>
+                                </td>
+                                <td>
+                                    {% if p.prediction == 'FAKE' %}
+                                        <span class="badge badge-fake">🔴 FAKE</span>
+                                    {% else %}
+                                        <span class="badge badge-real">🟢 REAL</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="conf-badge"><strong>{{ p.confidence }}%</strong></span>
+                                </td>
+                                <td class="time-col">
+                                    {{ p.created_at.strftime('%Y-%m-%d %H:%M:%S') if p.created_at else 'N/A' }}
+                                </td>
+                                <td class="text-right action-col">
+                                    <form action="{{ url_for('admin_delete_prediction', pred_id=p._id) }}" method="POST" style="display:inline;" onsubmit="return confirm('Delete this prediction from system?');">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                        <button type="submit" class="btn-icon btn-icon-danger" title="Delete record">
+                                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                {% if pred_total_pages > 1 %}
+                <div class="pagination-wrapper">
+                    <span class="pagination-info">Page {{ pred_page }} of {{ pred_total_pages }}</span>
+                    <div class="pagination-buttons">
+                        {% if pred_page > 1 %}
+                            <a href="{{ url_for('admin_dashboard', p_page=pred_page-1, pred_q=pred_query, pred_filter=pred_filter) }}#predictions" class="btn btn-secondary btn-sm">&larr; Previous</a>
+                        {% endif %}
+                        {% if pred_page < pred_total_pages %}
+                            <a href="{{ url_for('admin_dashboard', p_page=pred_page+1, pred_q=pred_query, pred_filter=pred_filter) }}#predictions" class="btn btn-secondary btn-sm">Next &rarr;</a>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+
+                {% else %}
+                <div class="empty-state">
+                    <p>No predictions found in the database.</p>
+                </div>
+                {% endif %}
+            </div>
+        </section>
+
+        <!-- SECTION 4: MODEL PERFORMANCE -->
+        <section id="performance" class="admin-section" style="margin-top: 24px;">
+            <div class="dashboard-card">
+                <div class="card-toolbar">
+                    <h3>Model Evaluation & Validation Report</h3>
+                    <span class="text-muted">Metrics from test set validation</span>
+                </div>
+
+                <div class="performance-grid">
+                    <div class="perf-metric-card">
+                        <span class="perf-icon">🎯</span>
+                        <span class="perf-label">Accuracy</span>
+                        <span class="perf-value">{{ model_metrics.accuracy }}%</span>
+                    </div>
+                    <div class="perf-metric-card">
+                        <span class="perf-icon">🔍</span>
+                        <span class="perf-label">Precision</span>
+                        <span class="perf-value">{{ model_metrics.precision }}%</span>
+                    </div>
+                    <div class="perf-metric-card">
+                        <span class="perf-icon">📊</span>
+                        <span class="perf-label">Recall</span>
+                        <span class="perf-value">{{ model_metrics.recall }}%</span>
+                    </div>
+                    <div class="perf-metric-card">
+                        <span class="perf-icon">🏆</span>
+                        <span class="perf-label">F1-Score</span>
+                        <span class="perf-value">{{ model_metrics.f1_score }}%</span>
+                    </div>
+                </div>
+
+                <div class="cm-image-container" style="margin-top: 20px;">
+                    <img src="{{ url_for('static', filename='confusion_matrix.png') }}" alt="Model Confusion Matrix" style="max-width: 500px; width: 100%; border-radius: 8px;">
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 5: SYSTEM TELEMETRY -->
+        <section id="telemetry" class="admin-section" style="margin-top: 24px;">
+            <div class="dashboard-card">
+                <div class="card-toolbar">
+                    <h3>System Architecture & Environment Telemetry</h3>
+                    <span class="text-muted">Diagnostic runtime configuration</span>
+                </div>
+
+                <div class="telemetry-grid">
+                    <div class="telemetry-item">
+                        <span class="telemetry-label">MongoDB Status</span>
+                        <span class="status-indicator active">Connected (Atlas Cluster)</span>
+                    </div>
+                    <div class="telemetry-item">
+                        <span class="telemetry-label">Database Name</span>
+                        <span class="font-mono">fake_news_detector</span>
+                    </div>
+                    <div class="telemetry-item">
+                        <span class="telemetry-label">Collections</span>
+                        <span class="font-mono">predictions, users, feedback</span>
+                    </div>
+                    <div class="telemetry-item">
+                        <span class="telemetry-label">ML Vectorizer</span>
+                        <span class="font-mono">TF-IDF (5,000 max features)</span>
+                    </div>
+                    <div class="telemetry-item">
+                        <span class="telemetry-label">Classification Engine</span>
+                        <span class="font-mono">Scikit-Learn Logistic Regression</span>
+                    </div>
+                    <div class="telemetry-item">
+                        <span class="telemetry-label">SSRF Protection</span>
+                        <span class="status-indicator active">Enabled (RFC 1918 / Loopback filter)</span>
+                    </div>
+                    <div class="telemetry-item">
+                        <span class="telemetry-label">Session Protection</span>
+                        <span class="status-indicator active">HTTPOnly &bull; SameSite=Lax &bull; CSRF Verified</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+</div>
+{% endblock %}

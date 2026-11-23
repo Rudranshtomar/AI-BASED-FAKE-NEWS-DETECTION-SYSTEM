@@ -1,0 +1,819 @@
+{% extends "base.html" %}
+
+{% block title %}TruthLens AI - Discover the Truth Behind Every Headline{% endblock %}
+
+{% block content %}
+<!-- ========================================== -->
+<!-- HERO SECTION -->
+<!-- ========================================== -->
+<section class="hero-section">
+    <div class="container hero-grid">
+        <div class="hero-content">
+            <div class="hero-badge">
+                <span class="badge-dot"></span>
+                <span>Explainable AI Fake News Detector</span>
+            </div>
+            <h1 class="hero-title">Discover the Truth Behind Every Headline</h1>
+            <p class="hero-description">
+                Analyze news content with AI-powered classification to identify potentially fake or authentic news. Backed by calibrated Machine Learning and natural language feature explainability.
+            </p>
+            <div class="hero-cta-group">
+                <a href="#detector" class="btn btn-primary btn-lg">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                    Analyze News
+                </a>
+                <a href="#how-it-works" class="btn btn-secondary btn-lg">
+                    Explore How It Works
+                </a>
+            </div>
+
+            <div class="hero-metrics-pill">
+                <div class="metric-item">
+                    <span class="metric-val">{{ model_metrics.accuracy }}%</span>
+                    <span class="metric-lbl">Model Accuracy</span>
+                </div>
+                <div class="metric-divider"></div>
+                <div class="metric-item">
+                    <span class="metric-val">{{ total_predictions }}</span>
+                    <span class="metric-lbl">Articles Checked</span>
+                </div>
+                <div class="metric-divider"></div>
+                <div class="metric-item">
+                    <span class="metric-val">100%</span>
+                    <span class="metric-lbl">Transparent (XAI)</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="hero-visual" aria-hidden="true">
+            <div class="scanner-card">
+                <div class="scanner-header">
+                    <div class="scanner-dots">
+                        <span></span><span></span><span></span>
+                    </div>
+                    <span class="scanner-status">AI Verification Engine &bull; Ready</span>
+                </div>
+                <div class="scanner-body">
+                    <div class="scan-line"></div>
+                    <div class="sample-headline-preview">
+                        <div class="preview-badge">Live Processing</div>
+                        <div class="preview-skeleton-bar lg"></div>
+                        <div class="preview-skeleton-bar md"></div>
+                        <div class="preview-skeleton-bar sm"></div>
+                    </div>
+                    <div class="confidence-indicator-card">
+                        <div class="indicator-header">
+                            <span class="indicator-title">Linguistic Vector Weighting</span>
+                            <span class="indicator-score">Optimal</span>
+                        </div>
+                        <div class="vector-nodes">
+                            <span class="node active">NLP</span>
+                            <span class="node-arrow">&rarr;</span>
+                            <span class="node active">TF-IDF</span>
+                            <span class="node-arrow">&rarr;</span>
+                            <span class="node active">Logistic Reg.</span>
+                            <span class="node-arrow">&rarr;</span>
+                            <span class="node success">Verdict</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ========================================== -->
+<!-- DETECTION WORKSPACE SECTION -->
+<!-- ========================================== -->
+<section class="detector-section" id="detector">
+    <div class="container">
+        <div class="section-header text-center">
+            <span class="section-tag">AI News Analysis</span>
+            <h2 class="section-title">Analyze News Content</h2>
+            <p class="section-subtitle">
+                Paste any article text or provide a public news article URL for immediate, explainable classification.
+            </p>
+        </div>
+
+        <!-- System Alerts / Notifications -->
+        {% if error %}
+            <div class="alert-banner alert-danger error-message" role="alert">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                </svg>
+                <span>{{ error }}</span>
+            </div>
+        {% endif %}
+
+        {% if storage_unavailable %}
+            <div class="alert-banner alert-warning storage-message" role="status">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                    <line x1="12" y1="9" x2="12" y2="13"></line>
+                    <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                </svg>
+                <span>Prediction history is unavailable. Configure MongoDB to save and view checks.</span>
+            </div>
+        {% endif %}
+
+        <div class="detector-card">
+            <!-- Tabs: Text Analysis vs URL Analysis -->
+            <div class="detector-tabs" role="tablist">
+                <button type="button" class="tab-btn active" id="tabTextBtn" role="tab" aria-selected="true" aria-controls="textPanel">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                        <polyline points="10 9 9 9 8 9"></polyline>
+                    </svg>
+                    Text Analysis
+                </button>
+                <button type="button" class="tab-btn" id="tabUrlBtn" role="tab" aria-selected="false" aria-controls="urlPanel">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                        <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+                    </svg>
+                    Article URL
+                </button>
+            </div>
+
+            <!-- Panel 1: Direct Text Input -->
+            <div class="tab-panel active" id="textPanel" role="tabpanel">
+                <form action="{{ url_for('predict') }}" method="POST" id="textPredictForm" class="analysis-form">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <div class="input-header">
+                        <label for="newsTextarea" class="input-label">Article Text or News Statement</label>
+                        <div class="sample-actions">
+                            <span class="sample-label">Try Sample:</span>
+                            <button type="button" class="btn-sample" id="sampleRealBtn">Sample Real</button>
+                            <button type="button" class="btn-sample" id="sampleFakeBtn">Sample Fake</button>
+                        </div>
+                    </div>
+
+                    <div class="textarea-wrapper">
+                        <textarea
+                            id="newsTextarea"
+                            name="news"
+                            rows="6"
+                            placeholder="Paste the complete news article text, headline, or claim here to evaluate its authenticity..."
+                            required
+                        >{{ news if news else "" }}</textarea>
+                    </div>
+
+                    <div class="form-footer">
+                        <div class="char-count">
+                            <span id="charCount">0</span> characters | <span id="wordCount">0</span> words
+                        </div>
+                        <div class="form-buttons">
+                            <button type="button" class="btn btn-secondary" id="clearTextBtn">Clear</button>
+                            <button type="submit" class="btn btn-primary submit-btn" id="analyzeTextBtn">
+                                <span class="btn-text">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <circle cx="11" cy="11" r="8"></circle>
+                                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                                    </svg>
+                                    CHECK NEWS
+                                </span>
+                                <span class="spinner" style="display:none;" aria-hidden="true"></span>
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Panel 2: URL Analysis -->
+            <div class="tab-panel" id="urlPanel" role="tabpanel" style="display: none;">
+                <form action="{{ url_for('predict_url') }}" method="POST" id="urlPredictForm" class="analysis-form">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <div class="input-header">
+                        <label for="newsUrlInput" class="input-label">Public News Article URL</label>
+                        <span class="helper-text">Supports standard HTTP/HTTPS journalistic sources</span>
+                    </div>
+
+                    <div class="url-input-group">
+                        <div class="input-icon-wrapper">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="2" y1="12" x2="22" y2="12"></line>
+                                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                            </svg>
+                        </div>
+                        <input
+                            type="url"
+                            id="newsUrlInput"
+                            name="url"
+                            placeholder="https://example.com/world/news-article-title"
+                            value="{{ url if url else '' }}"
+                            required
+                        >
+                    </div>
+
+                    <div class="form-footer">
+                        <div class="url-security-note">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                            </svg>
+                            <span>Protected against SSRF and internal network traversal</span>
+                        </div>
+                        <div class="form-buttons">
+                            <button type="button" class="btn btn-secondary" id="clearUrlBtn">Clear</button>
+                            <button type="submit" class="btn btn-primary submit-btn" id="analyzeUrlBtn">
+                                <span class="btn-text">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <circle cx="11" cy="11" r="8"></circle>
+                                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                                    </svg>
+                                    Analyze URL
+                                </span>
+                                <span class="spinner" style="display:none;" aria-hidden="true"></span>
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- PREDICTION RESULT CARD -->
+        <!-- ========================================== -->
+        {% if prediction %}
+        <div class="result-card-container" id="predictionResult">
+            <div class="result-card {% if prediction == 'FAKE' %}fake-result{% else %}real-result{% endif %}" aria-live="polite">
+                <!-- Verdict Header -->
+                <div class="result-header">
+                    <div class="verdict-pill {% if prediction == 'FAKE' %}verdict-fake{% else %}verdict-real{% endif %}">
+                        <span class="verdict-icon">
+                            {% if prediction == 'FAKE' %}
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <line x1="15" y1="9" x2="9" y2="15"></line>
+                                    <line x1="9" y1="9" x2="15" y2="15"></line>
+                                </svg>
+                            {% else %}
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                                </svg>
+                            {% endif %}
+                        </span>
+                        <div class="verdict-titles">
+                            {% if prediction == 'FAKE' %}
+                                <h2 class="verdict-heading">🚨 FAKE NEWS</h2>
+                                <p class="verdict-sub">Potential misinformation or fabricated content detected</p>
+                            {% else %}
+                                <h2 class="verdict-heading">✅ REAL NEWS</h2>
+                                <p class="verdict-sub">Linguistic indicators align with authentic news reporting</p>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Confidence Gauge -->
+                    <div class="confidence-box">
+                        <div class="confidence-label-row">
+                            <span class="conf-title">🤖 AI confidence:</span>
+                            <span class="conf-percentage"><strong>{{ confidence }}%</strong></span>
+                        </div>
+                        <div class="progress" role="progressbar" aria-valuenow="{{ confidence }}" aria-valuemin="0" aria-valuemax="100">
+                            <div class="progress-bar {% if prediction == 'FAKE' %}bar-fake{% else %}bar-real{% endif %}" style="width: {{ confidence }}%;"></div>
+                        </div>
+                        <p class="conf-caption">Statistical classification confidence evaluated over TF-IDF n-grams</p>
+                    </div>
+                </div>
+
+                <!-- Explanation Note -->
+                <div class="result-explanation">
+                    <h4>What does this mean?</h4>
+                    <p>
+                        {% if prediction == 'FAKE' %}
+                            Our machine learning model identified stylistic features, sensationalist diction, or syntax patterns strongly correlated with unverified or misleading news articles in the training corpus.
+                        {% else %}
+                            The content demonstrates objective phrasing, formal attribution syntax, and neutral vocabulary consistent with verified, authentic news reporting.
+                        {% endif %}
+                    </p>
+                </div>
+
+                <!-- Verified Context & Article Snippet -->
+                {% if title or url or news %}
+                <div class="article-details-block">
+                    {% if title %}
+                        <div class="detail-row">
+                            <span class="detail-label">📰 Article Title:</span>
+                            <span class="detail-val font-semibold">{{ title }}</span>
+                        </div>
+                    {% endif %}
+                    {% if url %}
+                        <div class="detail-row">
+                            <span class="detail-label">🔗 Source URL:</span>
+                            <a href="{{ url }}" target="_blank" rel="noopener noreferrer" class="source-link">{{ url }}</a>
+                        </div>
+                    {% endif %}
+                    {% if news %}
+                        <div class="article-text-wrapper">
+                            <span class="detail-label">📄 Analyzed Excerpt:</span>
+                            <div class="article-text">
+                                <p>{{ news }}</p>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+                {% endif %}
+
+                <!-- Explainable AI (XAI) Signals -->
+                {% if explainability and (explainability.real_signals or explainability.fake_signals) %}
+                <div class="explainability-box">
+                    <div class="xai-header">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+                            <polyline points="2 17 12 22 22 17"></polyline>
+                            <polyline points="2 12 12 17 22 12"></polyline>
+                        </svg>
+                        <h3>🔍 Model Decision Highlights (Explainable AI)</h3>
+                    </div>
+                    <p class="explain-subtitle">Salient vocabulary tokens detected in the text that weighted this prediction:</p>
+                    <div class="signals-container">
+                        {% if explainability.fake_signals %}
+                        <div class="signal-group fake-signals">
+                            <span class="signal-title">🚨 Fake Indicators (Negative Bias):</span>
+                            <div class="pill-list">
+                                {% for item in explainability.fake_signals %}
+                                    <span class="pill pill-fake" title="Logistic regression weight: {{ item.weight }}">
+                                        {{ item.word }} <small>+{{ item.weight }}</small>
+                                    </span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% if explainability.real_signals %}
+                        <div class="signal-group real-signals">
+                            <span class="signal-title">✅ Real Indicators (Positive Bias):</span>
+                            <div class="pill-list">
+                                {% for item in explainability.real_signals %}
+                                    <span class="pill pill-real" title="Logistic regression weight: {{ item.weight }}">
+                                        {{ item.word }} <small>+{{ item.weight }}</small>
+                                    </span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Mandatory Ethical AI Disclaimer -->
+                <div class="advisory-callout">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                        <line x1="12" y1="9" x2="12" y2="13"></line>
+                        <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                    </svg>
+                    <span>
+                        <strong>Critical Notice:</strong> Model predictions are probabilistic estimates derived from historical linguistic corpora and are not guaranteed to be correct. Always verify significant news through independent, accredited journalistic channels.
+                    </span>
+                </div>
+
+                <!-- Interactive User Feedback Widget -->
+                <div class="feedback-widget" id="feedbackWidget">
+                    <p class="feedback-question">Was this prediction accurate according to your verification?</p>
+                    <div class="feedback-actions">
+                        <button type="button" class="feedback-btn btn-yes" onclick="sendFeedback('{{ prediction }}', true)">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path>
+                            </svg>
+                            Accurate
+                        </button>
+                        <button type="button" class="feedback-btn btn-no" onclick="sendFeedback('{{ prediction }}', false)">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17"></path>
+                            </svg>
+                            Inaccurate
+                        </button>
+                    </div>
+                    <p class="feedback-status" id="feedbackStatus" style="display:none;"></p>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</section>
+
+<!-- ========================================== -->
+<!-- HOW IT WORKS SECTION -->
+<!-- ========================================== -->
+<section class="how-it-works-section" id="how-it-works">
+    <div class="container">
+        <div class="section-header text-center">
+            <span class="section-tag">Methodology</span>
+            <h2 class="section-title">How It Works</h2>
+            <p class="section-subtitle">
+                A transparent, three-stage pipeline transforms raw news articles into calibrated, explainable verifications.
+            </p>
+        </div>
+
+        <div class="steps-grid">
+            <div class="step-card">
+                <div class="step-num">01</div>
+                <div class="step-icon">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                    </svg>
+                </div>
+                <h3>Enter News Content</h3>
+                <p>
+                    Submit raw article text, a headline, or provide a supported news URL. The system automatically cleans, strips markup, and isolates the core reporting text.
+                </p>
+            </div>
+
+            <div class="step-card">
+                <div class="step-num">02</div>
+                <div class="step-icon">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+                        <polyline points="2 17 12 22 22 17"></polyline>
+                        <polyline points="2 12 12 17 22 12"></polyline>
+                    </svg>
+                </div>
+                <h3>AI Model Analyzes the Text</h3>
+                <p>
+                    TF-IDF vectorization quantifies n-gram token distributions. A trained Logistic Regression classifier analyzes lexical variance against thousands of verified reports.
+                </p>
+            </div>
+
+            <div class="step-card">
+                <div class="step-num">03</div>
+                <div class="step-icon">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <path d="M9 15l2 2 4-4"></path>
+                    </svg>
+                </div>
+                <h3>Review the Classification Result</h3>
+                <p>
+                    Instantly receive the predicted classification (FAKE or REAL), calibrated probability percentage, and word-level explainability tokens that drove the model's decision.
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ========================================== -->
+<!-- FEATURES SECTION -->
+<!-- ========================================== -->
+<section class="features-section" id="features">
+    <div class="container">
+        <div class="section-header text-center">
+            <span class="section-tag">Enterprise Capabilities</span>
+            <h2 class="section-title">Built for Modern Information Integrity</h2>
+            <p class="section-subtitle">
+                Designed to deliver dependable, fast, and explainable intelligence for researchers, journalists, and everyday citizens.
+            </p>
+        </div>
+
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                        <line x1="8" y1="21" x2="16" y2="21"></line>
+                        <line x1="12" y1="17" x2="12" y2="21"></line>
+                    </svg>
+                </div>
+                <h3>AI-Powered Text Classification</h3>
+                <p>
+                    High-throughput inference model trained on balanced real and fake news datasets, providing millisecond classifications with explainability.
+                </p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="2" y1="12" x2="22" y2="12"></line>
+                        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                    </svg>
+                </div>
+                <h3>News URL Analysis</h3>
+                <p>
+                    Directly fetch and parse online news stories from accredited public web domains with built-in SSRF and private-network security protections.
+                </p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <polyline points="12 6 12 12 16 14"></polyline>
+                    </svg>
+                </div>
+                <h3>Prediction History for Logged-In Users</h3>
+                <p>
+                    Secure user accounts store personal verification logs in MongoDB Atlas, with dedicated personal dashboards, search filtering, and privacy isolation.
+                </p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="20" x2="18" y2="10"></line>
+                        <line x1="12" y1="20" x2="12" y2="4"></line>
+                        <line x1="6" y1="20" x2="6" y2="14"></line>
+                    </svg>
+                </div>
+                <h3>Model Evaluation Metrics</h3>
+                <p>
+                    Full visibility into scientific performance indicators: Accuracy, Precision, Recall, F1-Score, and high-resolution Confusion Matrix charts.
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ========================================== -->
+<!-- DETECTION STATISTICS & ANALYTICS -->
+<!-- ========================================== -->
+<section class="stats-section" id="analytics">
+    <div class="container">
+        <div class="section-header text-center">
+            <span class="section-tag">Telemetry</span>
+            <h2 class="section-title">Detection Statistics</h2>
+            <p class="section-subtitle">Real-time database aggregated metrics across all verified articles.</p>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon-wrapper blue">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                </div>
+                <div class="stat-meta">
+                    <span class="stat-label">Total Checks</span>
+                    <span class="stat-number">{{ total_predictions }}</span>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon-wrapper red">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="15" y1="9" x2="9" y2="15"></line>
+                        <line x1="9" y1="9" x2="15" y2="15"></line>
+                    </svg>
+                </div>
+                <div class="stat-meta">
+                    <span class="stat-label">Fake News</span>
+                    <span class="stat-number" id="fakeCount">{{ fake_count }}</span>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon-wrapper green">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                        <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                    </svg>
+                </div>
+                <div class="stat-meta">
+                    <span class="stat-label">Real News</span>
+                    <span class="stat-number" id="realCount">{{ real_count }}</span>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon-wrapper violet">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                    </svg>
+                </div>
+                <div class="stat-meta">
+                    <span class="stat-label">Avg. Confidence</span>
+                    <span class="stat-number">{{ average_confidence }}%</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Fake vs Real Chart -->
+        <div class="chart-card">
+            <div class="chart-header">
+                <h3>Prediction Distribution</h3>
+                <span class="chart-sub">Class balance across all stored predictions</span>
+            </div>
+            <div class="chart-wrapper">
+                <canvas id="newsChart" aria-label="Prediction distribution doughnut chart" role="img"></canvas>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ========================================== -->
+<!-- MODEL PERFORMANCE METRICS SECTION -->
+<!-- ========================================== -->
+<section class="performance-section" id="performance">
+    <div class="container">
+        <div class="section-header text-center">
+            <span class="section-tag">Machine Learning</span>
+            <h2 class="section-title">Model Performance & Evaluation</h2>
+            <p class="section-subtitle">
+                Trained on real and fake news datasets with Scikit-learn TF-IDF n-gram vectorization and regularized Logistic Regression.
+            </p>
+        </div>
+
+        <div class="performance-grid">
+            <div class="perf-metric-card">
+                <span class="perf-icon">🎯</span>
+                <span class="perf-label">Accuracy</span>
+                <span class="perf-value">{{ model_metrics.accuracy }}%</span>
+                <small class="perf-desc">Overall correctness</small>
+            </div>
+            <div class="perf-metric-card">
+                <span class="perf-icon">🔍</span>
+                <span class="perf-label">Precision</span>
+                <span class="perf-value">{{ model_metrics.precision }}%</span>
+                <small class="perf-desc">Exactness of positive labels</small>
+            </div>
+            <div class="perf-metric-card">
+                <span class="perf-icon">📊</span>
+                <span class="perf-label">Recall</span>
+                <span class="perf-value">{{ model_metrics.recall }}%</span>
+                <small class="perf-desc">Completeness of discovery</small>
+            </div>
+            <div class="perf-metric-card">
+                <span class="perf-icon">🏆</span>
+                <span class="perf-label">F1-Score</span>
+                <span class="perf-value">{{ model_metrics.f1_score }}%</span>
+                <small class="perf-desc">Harmonic mean balance</small>
+            </div>
+            <div class="perf-metric-card">
+                <span class="perf-icon">🤖</span>
+                <span class="perf-label">Algorithm</span>
+                <span class="perf-value font-mono">Logistic Regression</span>
+                <small class="perf-desc">Calibrated probabilities</small>
+            </div>
+            <div class="perf-metric-card">
+                <span class="perf-icon">🔤</span>
+                <span class="perf-label">Text Processing</span>
+                <span class="perf-value font-mono">TF-IDF N-Grams</span>
+                <small class="perf-desc">Sub-linear term frequency</small>
+            </div>
+        </div>
+
+        <!-- Confusion Matrix Showcase -->
+        <div class="confusion-matrix-card">
+            <div class="cm-header">
+                <div>
+                    <h3>🧩 Confusion Matrix</h3>
+                    <p class="text-muted">Empirical validation matrix showing classification distribution across true vs predicted labels.</p>
+                </div>
+            </div>
+            <div class="cm-image-container">
+                <img
+                    src="{{ url_for('static', filename='confusion_matrix.png') }}"
+                    alt="Confusion Matrix showing actual and predicted news classifications"
+                    loading="lazy"
+                >
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ========================================== -->
+<!-- RECENT CHECKS HISTORY SECTION -->
+<!-- ========================================== -->
+<section class="history-section" id="history">
+    <div class="container">
+        <div class="history-card">
+            <div class="history-header">
+                <div>
+                    <h2 class="history-title">📋 Recent Checks</h2>
+                    <span class="history-subtitle">Latest 5 Predictions recorded in MongoDB Atlas</span>
+                </div>
+                <div class="history-actions">
+                    <a href="{{ url_for('export_history') }}" class="btn btn-secondary btn-sm" download>
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="7 10 12 15 17 10"></polyline>
+                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                        Export CSV
+                    </a>
+                    {% if session.get('user_role') == 'admin' %}
+                    <form action="{{ url_for('clear_history') }}" method="POST" onsubmit="return confirm('Clear all recent prediction history?');">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                        <button type="submit" class="btn btn-danger-subtle btn-sm">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="3 6 5 6 21 6"></polyline>
+                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                            </svg>
+                            Clear History
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% if history %}
+            <div class="table-responsive">
+                <table class="history-table">
+                    <thead>
+                        <tr>
+                            <th>News Snippet / Title</th>
+                            <th>Result</th>
+                            <th>Confidence</th>
+                            <th>Date & Time</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in history %}
+                        <tr>
+                            <td class="news-column">
+                                {% if item.title %}
+                                    <strong class="history-item-title">{{ item.title }}</strong>
+                                {% endif %}
+                                <p class="history-item-snippet">{{ item.news[:220] }}{% if item.news|length > 220 %}...{% endif %}</p>
+                                {% if item.url %}
+                                    <a href="{{ item.url }}" target="_blank" rel="noopener noreferrer" class="source-link">🔗 Open Source</a>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if item.prediction == "FAKE" %}
+                                    <span class="badge badge-fake">🔴 FAKE</span>
+                                {% else %}
+                                    <span class="badge badge-real">🟢 REAL</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="conf-badge"><strong>{{ item.confidence }}%</strong></span>
+                            </td>
+                            <td class="time-col">
+                                {% if item.created_at %}
+                                    {{ item.created_at.strftime("%d %b %Y, %I:%M %p") }}
+                                {% else %}
+                                    N/A
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <div class="empty-icon">🔍</div>
+                <h3>No predictions yet</h3>
+                <p>Check an article or URL above to see your history logged here.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</section>
+
+<!-- ========================================== -->
+<!-- DEVELOPER REST API SECTION -->
+<!-- ========================================== -->
+<section class="api-section" id="api-docs">
+    <div class="container">
+        <div class="section-header text-center">
+            <span class="section-tag">Integration</span>
+            <h2 class="section-title">Developer REST API</h2>
+            <p class="section-subtitle">
+                Integrate automated truth verification directly into browser extensions, automated content pipelines, or chatbots.
+            </p>
+        </div>
+
+        <div class="api-grid">
+            <div class="api-card">
+                <div class="api-header">
+                    <span class="http-badge post-badge">POST</span>
+                    <code>/api/predict</code>
+                </div>
+                <p>Classify raw text or article URLs with full JSON explainability weights.</p>
+                <div class="code-box">
+                    <pre><code>curl -X POST http://127.0.0.1:5000/api/predict \
+  -H "Content-Type: application/json" \
+  -d '{"news": "The government released a formal statement on the summit today."}'</code></pre>
+                </div>
+            </div>
+
+            <div class="api-card">
+                <div class="api-header">
+                    <span class="http-badge get-badge">GET</span>
+                    <code>/api/health</code>
+                </div>
+                <p>Health telemetry, ML vectorizer validation, and MongoDB Atlas connectivity.</p>
+                <div class="code-box">
+                    <pre><code>curl http://127.0.0.1:5000/api/health</code></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
